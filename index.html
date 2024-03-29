@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+
+<html lang="fr" prefix="og: https://ogp.me/ns#">
+  <head>
+    <meta charset="utf-8">
+    <meta name="author" content="Julien GIRAUD">
+    <meta name="copyright" content="">
+    <meta name="language" content="fr">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Suivi sommeil</title>
+    <meta name="robots" content="noindex">
+    <meta name="description" content="">
+    <meta name="keywords" content="">
+    <link rel="canonical" href="/">
+
+    <style>
+      body {
+        /* text-align: center; */
+      }
+    </style>
+
+    <script>
+      // TODO
+      // - minimal working app
+      // - make it efficient (minimise localStorage calls, save data in window)
+      // - make the app looks ok
+      // - add features ? export/import may be cool, maybe using url?
+      // - make the app looks great
+
+      window.addEventListener("load", (event) => {
+        main();
+      });
+
+      function buildDayData(params = {
+          date: getYesterday(),
+          bedTime: "",
+          sleepTime: "",
+          wakeupTime: "",
+          awakeCount: "",
+          sleepQuality: "",
+          tiredness: "",
+          treatment: ""
+        }) {
+        return params;
+      }
+
+      function getYesterday() {
+        return (new Date(new Date().getTime() - 24*3600*1000)).toISOString().slice(0,10);
+      }
+
+      function buildHtmlLineForDay(caption, day, key, index) {
+        return `<li>${caption} : <input value="${day[key]}" onchange="updateProperty(${index}, '${key}', event)"></li>`
+      }
+
+      function buildDayToHtml(day, index) {
+        const lines = [ // caption, key
+          ["Date", "date"],
+          ["Heure de couché", "bedTime"],
+          ["Heure d'endormissement", "sleepTime"],
+          ["Heure du réveil", "wakeupTime"],
+          ["Nombre de réveils", "awakeCount"],
+          ["Qualité de sommeil", "sleepQuality"],
+          ["Fatigue", "tiredness"],
+          ["Traitements", "treatment"],
+        ];
+        return `<ul>
+          ${lines.map(line => buildHtmlLineForDay(line[0], day, line[1], index)).join("\n")}
+        </ul>`;
+      }
+
+      function loadFromLocalStorage() {
+        let localDataStr = window.localStorage.getItem("daysHistory");
+        let localData;
+        if (localDataStr == null) {
+          console.log("create days");
+          localData = [buildDayData()];
+          window.localStorage.setItem("daysHistory", JSON.stringify(localData))
+        } else {
+          console.log("load days");
+          localData = JSON.parse(localDataStr);
+        }
+        return localData;
+      }
+
+      function updateProperty(index, property, event) {
+        const value = event.target.value;
+        const days = loadFromLocalStorage();
+        const day = days[index];
+        console.log(`update ${property} on day index ${index} from "${day[property]}" to "${value}"`);
+        day[property] = value;
+        window.localStorage.setItem("daysHistory", JSON.stringify(days));
+      }
+
+      function addDay() {
+        days = loadFromLocalStorage();
+        const day = buildDayData();
+        days.push(day);
+        window.localStorage.setItem("daysHistory", JSON.stringify(days));
+
+        const daysContainer = document.querySelector("#days");
+        const li = document.createElement("li");
+        li.innerHTML = buildDayToHtml(day, days.length - 1);
+        daysContainer.appendChild(li);
+      }
+
+      function main() {
+        days = loadFromLocalStorage();
+        console.log(days);
+        const daysContainer = document.querySelector("#days");
+        console.log(daysContainer);
+        days.forEach((day, index) => {
+          const li = document.createElement("li");
+          li.innerHTML = buildDayToHtml(day, index);
+          daysContainer.appendChild(li);
+        });
+      }
+    </script>
+
+  </head>
+
+  <body>
+    <header>
+    </header>
+
+    <section>
+      <h1>Suivi sommeil</h1>
+    </section>
+
+    <section>
+      <h2>Jours période</h2>
+      <ul id="days"></ul>
+      <button onclick="addDay()">+1</button>
+    </section>
+
+    <footer>
+    </footer>
+  </body>
+</html>
